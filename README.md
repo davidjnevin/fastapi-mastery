@@ -5,7 +5,7 @@ My notes and experiments while completing the [Mastering REST APIs with FastAPI]
 ## My Objectives:
 
  * TDD approach
- * Logging in FAstAPI
+ * Logging in FastAPI
  * Async databases
  * Log in
  * User Authentication
