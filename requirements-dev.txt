@@ -3,3 +3,4 @@ ruff
 black
 isort
 pre-commit
+pytest
