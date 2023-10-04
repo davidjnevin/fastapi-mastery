@@ -4,3 +4,5 @@ black
 isort
 pre-commit
 pytest
+httpx
+
