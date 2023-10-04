@@ -1,8 +1,13 @@
-from fastapi import FastAPI
+import fastapi
 
-app = FastAPI()
+from social.routers import healthcheck, post
 
+app = fastapi.FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+app.include_router(post.router)
+app.include_router(healthcheck.router)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app)
