@@ -106,3 +106,12 @@ async def test_get_post_and_its_comments(
             "post": created_post,
         }.items()
     )
+
+
+@pytest.mark.anyio
+async def test_get_non_existent_post(
+    async_client: AsyncClient, created_post: dict, created_comment: dict
+):
+    response = await async_client.get("/post/999")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Post with id 999 not found"}
