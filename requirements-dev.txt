@@ -5,5 +5,3 @@ isort
 pre-commit
 pytest
 httpx
-sqlalchemy
-databases[aiosqlite]
