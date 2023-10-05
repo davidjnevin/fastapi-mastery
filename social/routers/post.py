@@ -39,7 +39,7 @@ async def create_comment(comment: post.CommentIn):
             status_code=fastapi.status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {comment.post_id} not found",
         )
-    data = comment.dict()
+    data = comment.model_dump()
     last_record_id = len(comment_table)
     new_comment = {**data, "id": last_record_id}
     comment_table[last_record_id] = new_comment
