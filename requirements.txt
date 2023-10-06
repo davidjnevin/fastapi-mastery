@@ -4,3 +4,4 @@ sqlalchemy
 databases[aiosqlite]
 python-dotenv
 pydantic-settings
+rich
