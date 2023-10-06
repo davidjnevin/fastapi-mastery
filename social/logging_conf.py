@@ -23,12 +23,29 @@ def configure_logging() -> None:
                 },
             },
             "loggers": {
+                "uvicorn": {
+                    "handlers": ["default"],
+                    "level": "INFO",
+                },
                 "social": {
                     "handlers": ["default"],
                     "level": "DEBUG"
                     if isinstance(config, DevConfig)
                     else "INFO",
                     "propagate": False,  # Prevents double logging sent to root logger
+                },
+                "databases": {
+                    "handlers": ["default"],
+                    "level": "WARNING",
+                },
+                "fastapi": {
+                    "handlers": ["default"],
+                    "level": "WARNING",
+                    "propagate": False,
+                },
+                "aiosqlite": {
+                    "handlers": ["default"],
+                    "level": "WARNING",
                 },
             },
         }
