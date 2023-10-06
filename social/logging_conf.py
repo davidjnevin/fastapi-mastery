@@ -17,7 +17,7 @@ def configure_logging() -> None:
                 "file": {
                     "class": "logging.Formatter",
                     "datefmt": "%Y-%m-%d %H:%M:%S",
-                    "format": "%(asctime)s.%(msecs)03dZ | %(levelname)-8s | %(name)s:%(lineno)-4d | %(message)s",  # noqa: E501
+                    "format": "%(asctime)s.%(msecs)03dZ | %(levelname)-8s | %(name)s:%(lineno)d | %(message)s",  # noqa: E501
                 },
             },
             "handlers": {
@@ -42,7 +42,7 @@ def configure_logging() -> None:
                     "level": "INFO",
                 },
                 "social": {
-                    "handlers": ["default"],
+                    "handlers": ["default", "rotating_file"],
                     "level": "DEBUG"
                     if isinstance(config, DevConfig)
                     else "INFO",
