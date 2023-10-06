@@ -1,8 +1,19 @@
+from contextlib import asynccontextmanager
+
 import fastapi
 
+from social.database import database
 from social.routers import healthcheck, post
 
-app = fastapi.FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: fastapi.FastAPI):
+    await database.connect()
+    yield
+    await database.disconnect()
+
+
+app = fastapi.FastAPI(lifespan=lifespan)
 
 app.include_router(post.router)
 app.include_router(healthcheck.router)
