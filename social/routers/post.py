@@ -46,6 +46,7 @@ async def create_comment(comment: CommentIn):
     logger.info(f"Creating comment on post {comment.post_id}")
     post = await find_post(comment.post_id)
     if not post:
+        logger.error(f"Post {comment.post_id} not found")
         raise HTTPException(status_code=404, detail="Post not found")
 
     data = comment.model_dump()
@@ -68,6 +69,7 @@ async def get_post_with_comments(post_id: int):
     logger.info(f"Getting post {post_id} with comments")
     post = await find_post(post_id)
     if not post:
+        logger.error(f"Post {post_id} not found")
         raise HTTPException(
             status_code=404, detail=f"Post with id {post_id} not found"
         )
