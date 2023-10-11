@@ -3,6 +3,11 @@ from logging.config import dictConfig
 
 from social.config import DevConfig, config
 
+# To ensure that logtail is only used for production
+handlers = ["default", "rotating_file"]
+if not isinstance(config, DevConfig):
+    handlers.append("logtail")
+
 
 def obfuscated(email: str, obfuscated_length: int) -> str:
     if "@" not in email:
@@ -83,7 +88,7 @@ def configure_logging() -> None:
                     "level": "INFO",
                 },
                 "social": {
-                    "handlers": ["default", "rotating_file", "logtail"],
+                    "handlers": handlers,
                     "level": "DEBUG"
                     if isinstance(config, DevConfig)
                     else "INFO",
