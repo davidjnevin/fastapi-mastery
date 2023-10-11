@@ -24,6 +24,5 @@ async def test_register(async_client: AsyncClient):
             "password": password,
         },
     )
-    breakpoint()
     assert response.status_code == 201
     assert {"detail": "User created."}.items() <= response.json().items()
