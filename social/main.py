@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import fastapi
+import fastapi.exception_handlers
 
 from social.database import database
 from social.logging_conf import configure_logging
@@ -22,6 +23,15 @@ app = fastapi.FastAPI(lifespan=lifespan)
 
 app.include_router(post.router)
 app.include_router(healthcheck.router)
+
+
+@app.exception_handler(fastapi.HTTPException)
+async def http_exception_handle_logging(request, exc):
+    logger.error(f"HTTPException: {exc.status_code}  {exc.detail}")
+    return await fastapi.exception_handlers.http_exception_handler(
+        request, exc
+    )
+
 
 if __name__ == "__main__":
     import uvicorn
