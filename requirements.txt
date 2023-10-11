@@ -7,3 +7,4 @@ pydantic-settings
 rich
 asgi-correlation-id
 python-json-logger
+logtail-python
