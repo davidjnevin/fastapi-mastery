@@ -5,3 +5,4 @@ isort
 pre-commit
 pytest
 httpx
+pytest-mock
