@@ -18,8 +18,9 @@ async def register(user: UserIn) -> dict:
             status_code=400,
             detail="A user with that email already registered",
         )
+    hased_password = security.get_password_hash(user.password)
     query = user_table.insert().values(
-        email=user.email, password=user.password
+        email=user.email, password=hased_password
     )
     logger.debug(query)
     await database.execute(query)
