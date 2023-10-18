@@ -57,6 +57,6 @@ async def authenticate_user(email: str, password: str):
     user = await get_user(email)
     if not user:
         raise credentials_exception
-    if not verify_password(password, user["password"]):
+    if not verify_password(password, user.password):
         raise credentials_exception
     return user
