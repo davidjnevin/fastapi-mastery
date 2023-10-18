@@ -27,3 +27,27 @@ async def test_get_user(registered_user: dict):
 async def test_get_user_not_found():
     user = await security.get_user("non_existing_email")
     assert user is None
+
+
+@pytest.mark.anyio
+async def test_authenticate_user(registered_user: dict):
+    user = await security.authenticate_user(
+        registered_user["email"], registered_user["password"]
+    )
+    assert user.email == registered_user["email"]
+    assert user.id == registered_user["id"]
+    assert user.password != registered_user["password"]
+
+
+@pytest.mark.anyio
+async def test_authenticate_user_not_found():
+    with pytest.raises(security.fastapi.HTTPException):
+        await security.authenticate_user("non_existing_email", "password")
+
+
+@pytest.mark.anyio
+async def test_authenticate_user_wrong_password(registered_user: dict):
+    with pytest.raises(security.fastapi.HTTPException):
+        await security.authenticate_user(
+            registered_user["email"], registered_user["password"] + "wrong"
+        )
