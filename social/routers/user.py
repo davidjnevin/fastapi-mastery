@@ -10,6 +10,19 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+@router.post("/login", status_code=200)
+async def login(user: UserIn) -> dict:
+    logger.info("Logging in user")
+    db_user = await security.authenticate_user(user.email, user.password)
+    if not db_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Incorrect email or password",
+        )
+    token = security.create_access_token(db_user.email)
+    return {"access_token": token, "token_type": "bearer"}
+
+
 @router.post("/register", status_code=201)
 async def register(user: UserIn) -> dict:
     logger.info("Creating user")
