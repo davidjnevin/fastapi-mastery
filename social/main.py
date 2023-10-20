@@ -7,7 +7,7 @@ from asgi_correlation_id import CorrelationIdMiddleware
 
 from social.database import database
 from social.logging_conf import configure_logging
-from social.routers import healthcheck, post
+from social.routers import healthcheck, post, user
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ async def lifespan(app: fastapi.FastAPI):
 app = fastapi.FastAPI(lifespan=lifespan)
 app.add_middleware(CorrelationIdMiddleware)
 
+app.include_router(user.router)
 app.include_router(post.router)
 app.include_router(healthcheck.router)
 
