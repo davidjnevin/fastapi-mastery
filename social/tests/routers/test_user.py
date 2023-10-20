@@ -33,7 +33,7 @@ async def test_register_user_with_existing_email(
 @pytest.mark.anyio
 async def test_register_user_with_invalid_email(async_client: AsyncClient):
     response = await async_client.post(
-        "/login", json={"email": "bob", "password": "password"}
+        "/token", json={"email": "bob", "password": "password"}
     )
     assert response.status_code == 401
 
@@ -41,7 +41,7 @@ async def test_register_user_with_invalid_email(async_client: AsyncClient):
 @pytest.mark.anyio
 async def test_login_user(async_client: AsyncClient, registered_user: dict):
     response = await async_client.post(
-        "/login",
+        "/token",
         json={
             "email": registered_user["email"],
             "password": registered_user["password"],
