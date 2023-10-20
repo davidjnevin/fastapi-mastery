@@ -44,3 +44,9 @@ async def registered_user(async_client: AsyncClient) -> dict:
     if user:
         user_details["id"] = user.id
     return user_details
+
+
+@pytest.fixture()
+async def logged_in_token(async_client: AsyncClient, registered_user: dict):
+    response = await async_client.post("/token", json=registered_user)
+    return response.json()["access_token"]
