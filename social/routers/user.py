@@ -10,7 +10,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.post("/login", status_code=200)
+@router.post("/token", status_code=200)
 async def login(user: UserIn) -> dict:
     logger.info("Logging in user")
     db_user = await security.authenticate_user(user.email, user.password)
