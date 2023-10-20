@@ -2,7 +2,8 @@ import datetime
 import logging
 
 import fastapi
-from jose import jwt
+import fastapi.security
+from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
 
 from social.config import config
@@ -11,12 +12,14 @@ from social.database import database, user_table
 logger = logging.getLogger(__name__)
 
 JWT_SECRET = config.JWT_SECRET_KEY
-ALGORITH = config.JWT_ALGORITHM
+JWT_ALGORITHM = config.JWT_ALGORITHM
+oauth2_scheme = fastapi.security.OAuth2PasswordBearer(tokenUrl="login")
 pwd_context = CryptContext(schemes=["bcrypt"])
 
 credentials_exception = fastapi.HTTPException(
     status_code=fastapi.status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
 )
 
 
@@ -30,7 +33,7 @@ def create_access_token(email: str):
         minutes=access_token_expire_minutes()
     )
     jwt_data = {"sub": email, "exp": expire}
-    encoded_jwt = jwt.encode(jwt_data, key=JWT_SECRET, algorithm=ALGORITH)
+    encoded_jwt = jwt.encode(jwt_data, key=JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
 
@@ -58,5 +61,25 @@ async def authenticate_user(email: str, password: str):
     if not user:
         raise credentials_exception
     if not verify_password(password, user.password):
+        raise credentials_exception
+    return user
+
+
+async def get_current_user(token: str):
+    try:
+        payload = jwt.decode(token, key=JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        email = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except ExpiredSignatureError as e:
+        raise fastapi.HTTPException(
+            status_code=fastapi.status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+    except JWTError as e:
+        raise credentials_exception from e
+    user = await get_user(email=email)
+    if user is None:
         raise credentials_exception
     return user
