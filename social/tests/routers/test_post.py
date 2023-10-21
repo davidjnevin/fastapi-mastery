@@ -86,10 +86,12 @@ async def test_create_post_json_without_body_keyword_should_fail(
 async def test_create_post_expired_token(
     async_client: AsyncClient, registered_user: dict, mocker
 ):
-    mocker.patch(
-        "social.security.access_token_expire_minutes", return_value=-1
+    # mocker.patch(
+    #     "social.security.access_token_expire_minutes", return_value=-1
+    # )
+    expired_token = create_access_token(
+        registered_user["email"], expires_minutes=-1
     )
-    expired_token = create_access_token(registered_user["email"])
     body = "Test Post"
     response = await async_client.post(
         "/post",
