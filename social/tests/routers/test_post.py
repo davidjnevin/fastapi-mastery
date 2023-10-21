@@ -84,11 +84,9 @@ async def test_create_post_json_without_body_keyword_should_fail(
 
 @pytest.mark.anyio
 async def test_create_post_expired_token(
-    async_client: AsyncClient, registered_user: dict, mocker
+    async_client: AsyncClient,
+    registered_user: dict,
 ):
-    # mocker.patch(
-    #     "social.security.access_token_expire_minutes", return_value=-1
-    # )
     expired_token = create_access_token(
         registered_user["email"], expires_minutes=-1
     )
@@ -181,3 +179,24 @@ async def test_get_non_existent_post(
     response = await async_client.get("/post/999")
     assert response.status_code == 404
     assert response.json() == {"detail": "Post with id 999 not found"}
+
+
+@pytest.mark.anyio
+async def test_like_post(
+    async_client: AsyncClient,
+    created_post: dict,
+    logged_in_token: str,
+    registered_user: dict,
+):
+    response = await async_client.post(
+        "/post/like",
+        json={"post_id": created_post["id"]},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "id": 1,
+        "post_id": created_post["id"],
+        "user_id": registered_user["id"],
+    }
