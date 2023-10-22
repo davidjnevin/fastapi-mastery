@@ -17,6 +17,8 @@ class GlobalConfig(BaseConfig):
     LOGTAIL_API_KEY: Optional[str] = None
     JWT_ALGORITHM: Optional[str] = None
     JWT_SECRET_KEY: Optional[str] = None
+    MAILGUN_API_KEY: Optional[str] = None
+    MAILGUN_DOMAIN: Optional[str] = None
 
 
 class DevConfig(GlobalConfig):
