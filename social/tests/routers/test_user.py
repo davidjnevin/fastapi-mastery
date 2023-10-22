@@ -42,7 +42,24 @@ async def test_register_user_with_invalid_email(async_client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_login_user(async_client: AsyncClient, registered_user: dict):
+async def test_login_user(async_client: AsyncClient, confirmed_user: dict):
+    response = await async_client.post(
+        "/token",
+        json={
+            "email": confirmed_user["email"],
+            "password": confirmed_user["password"],
+        },
+    )
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert "token_type" in response.json()
+    assert response.json()["token_type"] == "bearer"
+
+
+@pytest.mark.anyio
+async def test_login_unconfirmed_user(
+    async_client: AsyncClient, registered_user: dict
+):
     response = await async_client.post(
         "/token",
         json={
@@ -50,10 +67,8 @@ async def test_login_user(async_client: AsyncClient, registered_user: dict):
             "password": registered_user["password"],
         },
     )
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert "token_type" in response.json()
-    assert response.json()["token_type"] == "bearer"
+    assert response.status_code == 401
+    assert "User has not confirmed email" in response.json()["detail"]
 
 
 @pytest.mark.anyio

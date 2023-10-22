@@ -109,6 +109,11 @@ async def authenticate_user(email: str, password: str):
         raise create_credentials_exception(details="Invalid email or password")
     if not verify_password(password, user.password):
         raise create_credentials_exception(details="Invalid email or password")
+    if not user.is_active:
+        raise create_credentials_exception(
+            details="User has not confirmed email"
+        )
+
     return user
 
 

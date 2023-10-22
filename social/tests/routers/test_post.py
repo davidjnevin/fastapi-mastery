@@ -62,7 +62,7 @@ async def created_comment(
 
 @pytest.mark.anyio
 async def test_create_post(
-    async_client: AsyncClient, registered_user: dict, logged_in_token: str
+    async_client: AsyncClient, confirmed_user: dict, logged_in_token: str
 ):
     body = "Test Post"
     response = await async_client.post(
@@ -77,7 +77,7 @@ async def test_create_post(
     assert {
         "id": 1,
         "body": body,
-        "user_id": registered_user["id"],
+        "user_id": confirmed_user["id"],
     }.items() <= response.json().items()
 
 
@@ -98,10 +98,10 @@ async def test_create_post_json_without_body_keyword_should_fail(
 @pytest.mark.anyio
 async def test_create_post_expired_token(
     async_client: AsyncClient,
-    registered_user: dict,
+    confirmed_user: dict,
 ):
     expired_token = create_access_token(
-        registered_user["email"], expires_minutes=-1
+        confirmed_user["email"], expires_minutes=-1
     )
     body = "Test Post"
     response = await async_client.post(
@@ -163,7 +163,7 @@ async def test_gat_all_posts_incorrect_sorting(async_client: AsyncClient):
 async def test_create_comment(
     async_client: AsyncClient,
     created_post: dict,
-    registered_user: dict,
+    confirmed_user: dict,
     logged_in_token: str,
 ):
     body = "Test Comment"
@@ -182,7 +182,7 @@ async def test_create_comment(
         "id": 1,
         "body": body,
         "post_id": created_post["id"],
-        "user_id": registered_user["id"],
+        "user_id": confirmed_user["id"],
     }.items() <= response.json().items()
 
 
@@ -223,9 +223,7 @@ async def test_get_post_and_its_comments(
 
 
 @pytest.mark.anyio
-async def test_get_non_existent_post(
-    async_client: AsyncClient, created_post: dict, created_comment: dict
-):
+async def test_get_non_existent_post(async_client: AsyncClient):
     response = await async_client.get("/post/999")
     assert response.status_code == 404
     assert response.json() == {"detail": "Post with id 999 not found"}
@@ -236,7 +234,7 @@ async def test_like_post(
     async_client: AsyncClient,
     created_post: dict,
     logged_in_token: str,
-    registered_user: dict,
+    confirmed_user: dict,
 ):
     response = await async_client.post(
         "/post/like",
@@ -248,5 +246,5 @@ async def test_like_post(
     assert response.json() == {
         "id": 1,
         "post_id": created_post["id"],
-        "user_id": registered_user["id"],
+        "user_id": confirmed_user["id"],
     }

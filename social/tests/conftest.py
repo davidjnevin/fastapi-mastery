@@ -47,6 +47,17 @@ async def registered_user(async_client: AsyncClient) -> dict:
 
 
 @pytest.fixture()
-async def logged_in_token(async_client: AsyncClient, registered_user: dict):
-    response = await async_client.post("/token", json=registered_user)
+async def confirmed_user(registered_user: dict) -> dict:
+    query = (
+        user_table.update()
+        .where(user_table.c.email == registered_user["email"])
+        .values(is_active=True)
+    )
+    await database.execute(query)
+    return registered_user
+
+
+@pytest.fixture()
+async def logged_in_token(async_client: AsyncClient, confirmed_user: dict):
+    response = await async_client.post("/token", json=confirmed_user)
     return response.json()["access_token"]
