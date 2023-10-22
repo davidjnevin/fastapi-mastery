@@ -28,6 +28,10 @@ def access_token_expire_minutes():
     return 30
 
 
+def confirmation_token_expire_minutes():
+    return 1440  # 24 hours
+
+
 def create_access_token(email: str, expires_minutes: int = None):
     logger.debug("Creating access token", extra={"email": email})
     if expires_minutes is None:
@@ -36,7 +40,20 @@ def create_access_token(email: str, expires_minutes: int = None):
     expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
         minutes=expires_minutes
     )
-    jwt_data = {"sub": email, "exp": expire}
+    jwt_data = {"sub": email, "exp": expire, "type": "access"}
+    encoded_jwt = jwt.encode(jwt_data, key=JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return encoded_jwt
+
+
+def create_confirmation_token(email: str, expires_minutes: int = None):
+    logger.debug("Creating email confirmation token", extra={"email": email})
+    if expires_minutes is None:
+        expires_minutes = confirmation_token_expire_minutes()
+
+    expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
+        minutes=expires_minutes
+    )
+    jwt_data = {"sub": email, "exp": expire, "type": "confirmation"}
     encoded_jwt = jwt.encode(jwt_data, key=JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
@@ -76,6 +93,9 @@ async def get_current_user(
         payload = jwt.decode(token, key=JWT_SECRET, algorithms=[JWT_ALGORITHM])
         email = payload.get("sub")
         if email is None:
+            raise credentials_exception
+        type = payload.get("type")
+        if type != "access" or type is None:
             raise credentials_exception
     except ExpiredSignatureError as e:
         raise fastapi.HTTPException(
