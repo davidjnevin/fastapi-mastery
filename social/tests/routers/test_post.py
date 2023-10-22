@@ -26,6 +26,19 @@ async def create_comment(
     return response.json()
 
 
+async def like_post(
+    post_id: int,
+    async_client: AsyncClient,
+    logged_in_token: str,
+) -> dict:
+    response = await async_client.post(
+        "post/like",
+        json={"post_id": post_id},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+    return response.json()
+
+
 @pytest.fixture()
 async def created_post(async_client: AsyncClient, logged_in_token: str):
     return await create_post(
@@ -84,12 +97,12 @@ async def test_create_post_json_without_body_keyword_should_fail(
 
 @pytest.mark.anyio
 async def test_create_post_expired_token(
-    async_client: AsyncClient, registered_user: dict, mocker
+    async_client: AsyncClient,
+    registered_user: dict,
 ):
-    mocker.patch(
-        "social.security.access_token_expire_minutes", return_value=-1
+    expired_token = create_access_token(
+        registered_user["email"], expires_minutes=-1
     )
-    expired_token = create_access_token(registered_user["email"])
     body = "Test Post"
     response = await async_client.post(
         "/post",
@@ -166,7 +179,7 @@ async def test_get_post_and_its_comments(
     assert (
         response.json().items()
         <= {
-            "post": created_post,
+            "post": {**created_post, "likes": 0},
             "comments": [created_comment],
         }.items()
     )
@@ -179,3 +192,24 @@ async def test_get_non_existent_post(
     response = await async_client.get("/post/999")
     assert response.status_code == 404
     assert response.json() == {"detail": "Post with id 999 not found"}
+
+
+@pytest.mark.anyio
+async def test_like_post(
+    async_client: AsyncClient,
+    created_post: dict,
+    logged_in_token: str,
+    registered_user: dict,
+):
+    response = await async_client.post(
+        "/post/like",
+        json={"post_id": created_post["id"]},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "id": 1,
+        "post_id": created_post["id"],
+        "user_id": registered_user["id"],
+    }

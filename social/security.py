@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 JWT_SECRET = config.JWT_SECRET_KEY
 JWT_ALGORITHM = config.JWT_ALGORITHM
 oauth2_scheme = fastapi.security.OAuth2PasswordBearer(tokenUrl="login")
-pwd_context = CryptContext(schemes=["bcrypt"])
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 credentials_exception = fastapi.HTTPException(
     status_code=fastapi.status.HTTP_401_UNAUTHORIZED,
@@ -28,10 +28,13 @@ def access_token_expire_minutes():
     return 30
 
 
-def create_access_token(email: str):
+def create_access_token(email: str, expires_minutes: int = None):
     logger.debug("Creating access token", extra={"email": email})
+    if expires_minutes is None:
+        expires_minutes = access_token_expire_minutes()
+
     expire = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-        minutes=access_token_expire_minutes()
+        minutes=expires_minutes
     )
     jwt_data = {"sub": email, "exp": expire}
     encoded_jwt = jwt.encode(jwt_data, key=JWT_SECRET, algorithm=JWT_ALGORITHM)
