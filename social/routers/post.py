@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated
 
+import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException
 
 import social.security as security
@@ -13,12 +14,22 @@ from social.models.post import (
     UserPost,
     UserPostIn,
     UserPostWithComments,
+    UserPostWithLikes,
 )
 from social.models.user import User
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
+
+select_post_with_likes = (
+    sqlalchemy.select(
+        post_table,
+        sqlalchemy.func.count(like_table.c.id).label("likes"),
+    )
+    .select_from(post_table.outerjoin(like_table))
+    .group_by(post_table.c.id)
+)
 
 
 async def find_post(post_id: int):
@@ -77,7 +88,10 @@ async def get_comments_on_post(post_id: int):
 @router.get("/post/{post_id}", response_model=UserPostWithComments)
 async def get_post_with_comments(post_id: int):
     logger.info(f"Getting post {post_id} with comments")
-    post = await find_post(post_id)
+    query = select_post_with_likes.where(post_table.c.id == post_id)
+    logger.debug(query)
+
+    post = await database.fetch_one(query)
     if not post:
         raise HTTPException(
             status_code=404, detail=f"Post with id {post_id} not found"
@@ -86,6 +100,7 @@ async def get_post_with_comments(post_id: int):
     return {
         "post": post,
         "comments": await get_comments_on_post(post_id),
+        "likes": post.likes,
     }
 
 
@@ -104,3 +119,13 @@ async def like_post(
     logger.debug(query)
     last_record_id = await database.execute(query)
     return {**data, "id": last_record_id}
+
+
+@router.get("/post/{post_id}/like", response_model=list[PostLike])
+async def get_likes_on_post(post_id: int):
+    pass
+
+
+@router.get("/post/like/{post_id}", response_model=UserPostWithLikes)
+async def get_post_with_likes(post_id: int):
+    pass
