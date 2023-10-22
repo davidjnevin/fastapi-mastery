@@ -17,7 +17,10 @@ def test_confirmation_token_expire_minutes():
 def test_create_access_token():
     token = security.create_access_token("123")
     assert isinstance(token, str)
-    assert {"sub": "123", "type": "access"}.items() <= security.jwt.decode(
+    assert {
+        "sub": "123",
+        "type": "access",
+    }.items() <= security.jwt.decode(
         token,
         security.JWT_SECRET,
         algorithms=[security.JWT_ALGORITHM],
@@ -35,6 +38,85 @@ def test_confirmation_access_token():
         security.JWT_SECRET,
         algorithms=[security.JWT_ALGORITHM],
     ).items()
+
+
+def test_get_email_for_token_type_access():
+    email = "test@davidnevin.net"
+    token = security.create_access_token(email)
+    token_email = security.get_email_for_token_type(token, "access")
+    assert token_email == email
+
+
+def test_get_email_for_token_type_confirmation():
+    email = "test@davidnevin.net"
+    token = security.create_confirmation_token(email)
+    token_email = security.get_email_for_token_type(token, "confirmation")
+    assert token_email == email
+
+
+def test_get_email_for_expired_access_token():
+    email = "test@davidnevin.net"
+    access_token = security.create_access_token(email, expires_minutes=-1)
+    with pytest.raises(security.fastapi.HTTPException) as exc_info:
+        security.get_email_for_token_type(access_token, "access")
+    assert exc_info.value.detail == "Token has expired"
+
+
+def test_get_email_for_expired_confirmation_token():
+    email = "test@davidnevin.net"
+    confirmation_token = security.create_access_token(
+        email, expires_minutes=-1
+    )
+    with pytest.raises(security.fastapi.HTTPException) as exc_info:
+        security.get_email_for_token_type(confirmation_token, "access")
+    assert exc_info.value.detail == "Token has expired"
+
+
+def test_get_email_invalid_access_token():
+    with pytest.raises(security.fastapi.HTTPException) as exc_info:
+        security.get_email_for_token_type("invalid token", "access")
+    assert exc_info.value.detail == "Invalid token"
+
+
+def test_get_email_invalid_confirmation_token():
+    with pytest.raises(security.fastapi.HTTPException) as exc_info:
+        security.get_email_for_token_type("invalid token", "confirmation")
+    assert exc_info.value.detail == "Invalid token"
+
+
+def test_get_email_for_token_missing_sub_field():
+    email = "test@davidnevin.net"
+    token = security.create_access_token(email)
+    payload = security.jwt.decode(
+        token,
+        key=security.JWT_SECRET,
+        algorithms=[security.JWT_ALGORITHM],
+    )
+    del payload["sub"]
+    token = security.jwt.encode(
+        payload, security.JWT_SECRET, security.JWT_ALGORITHM
+    )
+
+    with pytest.raises(security.fastapi.HTTPException) as exc_info:
+        security.get_email_for_token_type(token, "access")
+    assert exc_info.value.detail == "Token is missing 'sub' field"
+
+
+def test_get_email_for_token_wrong_type():
+    email = "test@davidnevin.net"
+    access_token = security.create_access_token(email)
+    confirmation_token = security.create_confirmation_token(email)
+
+    with pytest.raises(security.fastapi.HTTPException) as exc_info:
+        security.get_email_for_token_type(access_token, "confirmation")
+    assert (
+        exc_info.value.detail
+        == "Token is of invalid type, expected confirmation"
+    )
+
+    with pytest.raises(security.fastapi.HTTPException) as exc_info:
+        security.get_email_for_token_type(confirmation_token, "access")
+    assert exc_info.value.detail == "Token is of invalid type, expected access"
 
 
 @pytest.mark.slow(reason="Slow test")
