@@ -6,7 +6,38 @@ from databases.interfaces import Record
 from social import security
 
 
-@pytest.mark.skip(reason="Slow test")
+def test_access_token_expire_minutes():
+    assert security.access_token_expire_minutes() == 30
+
+
+def test_confirmation_token_expire_minutes():
+    assert security.confirmation_token_expire_minutes() == 1440
+
+
+def test_create_access_token():
+    token = security.create_access_token("123")
+    assert isinstance(token, str)
+    assert {"sub": "123", "type": "access"}.items() <= security.jwt.decode(
+        token,
+        security.JWT_SECRET,
+        algorithms=[security.JWT_ALGORITHM],
+    ).items()
+
+
+def test_confirmation_access_token():
+    token = security.create_confirmation_token("123")
+    assert isinstance(token, str)
+    assert {
+        "sub": "123",
+        "type": "confirmation",
+    }.items() <= security.jwt.decode(
+        token,
+        security.JWT_SECRET,
+        algorithms=[security.JWT_ALGORITHM],
+    ).items()
+
+
+@pytest.mark.slow(reason="Slow test")
 def test_password_hashes():
     password = "secret"
     hashed_password = security.get_password_hash(password)
@@ -64,3 +95,10 @@ async def test_get_current_user(registered_user: dict):
 async def test_get_current_user_invalid_token():
     with pytest.raises(security.fastapi.HTTPException):
         await security.get_current_user("invalid token")
+
+
+@pytest.mark.anyio
+async def test_get_current_user_incorrect_token_type(registered_user: dict):
+    token = security.create_confirmation_token(registered_user["email"])
+    with pytest.raises(security.fastapi.HTTPException):
+        await security.get_current_user(token)
