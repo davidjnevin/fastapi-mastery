@@ -26,6 +26,19 @@ async def create_comment(
     return response.json()
 
 
+async def like_post(
+    post_id: int,
+    async_client: AsyncClient,
+    logged_in_token: str,
+) -> dict:
+    response = await async_client.post(
+        "post/like",
+        json={"post_id": post_id},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+    return response.json()
+
+
 @pytest.fixture()
 async def created_post(async_client: AsyncClient, logged_in_token: str):
     return await create_post(
@@ -166,7 +179,7 @@ async def test_get_post_and_its_comments(
     assert (
         response.json().items()
         <= {
-            "post": created_post,
+            "post": {**created_post, "likes": 0},
             "comments": [created_comment],
         }.items()
     )
