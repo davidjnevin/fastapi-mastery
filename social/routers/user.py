@@ -1,8 +1,9 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 import social.security as security
+import social.tasks as tasks
 from social.database import database, user_table
 from social.models.user import UserIn
 
@@ -24,7 +25,9 @@ async def login(user: UserIn) -> dict:
 
 
 @router.post("/register", status_code=201)
-async def register(user: UserIn) -> dict:
+async def register(
+    user: UserIn, background_tasks: BackgroundTasks, request: Request
+) -> dict:
     logger.info("Creating user")
     if await security.get_user(user.email):
         raise HTTPException(
@@ -37,4 +40,35 @@ async def register(user: UserIn) -> dict:
     )
     logger.debug(query)
     await database.execute(query)
-    return {"detail": "User created."}
+    background_tasks.add_task(
+        tasks.send_user_registration_email,
+        user.email,
+        confirmation_url=str(
+            request.url_for(
+                "confirm_email",
+                token=security.create_confirmation_token(user.email),
+            ),
+        ),
+    )
+    return {
+        "detail": "User created. Please confirm your email",
+    }
+
+
+@router.get("/confirm/{token}", status_code=200)
+async def confirm_email(token: str) -> dict:
+    logger.info("Confirming user")
+    email = security.get_email_for_token_type(token, "confirmation")
+    if not email:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid token",
+        )
+    query = (
+        user_table.update()
+        .where(user_table.c.email == email)
+        .values(is_active=True)
+    )
+    logger.debug(query)
+    await database.execute(query)
+    return {"detail": "User confirmed."}
