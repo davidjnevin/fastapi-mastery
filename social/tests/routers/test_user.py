@@ -1,5 +1,5 @@
 import pytest
-from fastapi import Request
+from fastapi import BackgroundTasks
 from httpx import AsyncClient
 
 
@@ -73,13 +73,13 @@ async def test_login_unconfirmed_user(
 
 @pytest.mark.anyio
 async def test_activate_user(async_client: AsyncClient, mocker):
-    spy = mocker.spy(Request, "url_for")
+    spy = mocker.spy(BackgroundTasks, "add_task")
     await create_user(
         "test@davidnevin.net",
         "password",
         async_client,
     )
-    confirmation_url = str(spy.spy_return)
+    confirmation_url = str(spy.call_args[1]["confirmation_url"])
     response = await async_client.get(confirmation_url)
     assert response.status_code == 200
     assert {"detail": "User confirmed."}.items() <= response.json().items()
@@ -100,13 +100,13 @@ async def test_activate_user_with_expired_token(
     mocker.patch(
         "social.security.confirmation_token_expire_minutes", return_value=-1
     )
-    spy = mocker.spy(Request, "url_for")
+    spy = mocker.spy(BackgroundTasks, "add_task")
     await create_user(
         email,
         "password",
         async_client,
     )
-    confirmation_url = str(spy.spy_return)
+    confirmation_url = str(spy.call_args[1]["confirmation_url"])
     response = await async_client.get(confirmation_url)
     assert response.status_code == 401
     assert {"detail": "Token has expired"}.items() <= response.json().items()
