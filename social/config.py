@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class BaseConfig(BaseSettings):
     ENV_STATE: Optional[str] = None
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore", env_file_encoding="utf-8"
+    )
 
 
 class GlobalConfig(BaseConfig):
