@@ -1,8 +1,9 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 import social.security as security
+import social.tasks as tasks
 from social.database import database, user_table
 from social.models.user import UserIn
 
@@ -24,7 +25,9 @@ async def login(user: UserIn) -> dict:
 
 
 @router.post("/register", status_code=201)
-async def register(user: UserIn, request: Request) -> dict:
+async def register(
+    user: UserIn, background_tasks: BackgroundTasks, request: Request
+) -> dict:
     logger.info("Creating user")
     if await security.get_user(user.email):
         raise HTTPException(
@@ -37,14 +40,18 @@ async def register(user: UserIn, request: Request) -> dict:
     )
     logger.debug(query)
     await database.execute(query)
-    return {
-        "detail": "User created. Please confirm your email",
-        "activation_url": str(
+    background_tasks.add_task(
+        tasks.send_user_registration_email,
+        user.email,
+        confirmation_url=str(
             request.url_for(
                 "confirm_email",
                 token=security.create_confirmation_token(user.email),
             ),
         ),
+    )
+    return {
+        "detail": "User created. Please confirm your email",
     }
 
 
