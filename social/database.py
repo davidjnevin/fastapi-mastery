@@ -23,6 +23,7 @@ post_table = sqlalchemy.Table(
     sqlalchemy.Column(
         "user_id", sqlalchemy.ForeignKey("users.id"), nullable=False
     ),
+    sqlalchemy.Column("image_url", sqlalchemy.String),
 )
 
 comment_table = sqlalchemy.Table(
