@@ -117,8 +117,8 @@ async def generate_image_and_add_to_post(
     to = email
     subject = "Image generated for your post!"
     body = (
-        "Hi there,\nYour image has been generated"
-        " for your post and is available at {post_url}\n"
+        f"Hi there,\nYour image has been generated"
+        f" for your post and is available at {post_url}.\n"
     )
     await send_simple_email(to, subject, body)
     return response
