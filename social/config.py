@@ -21,6 +21,9 @@ class GlobalConfig(BaseConfig):
     JWT_SECRET_KEY: Optional[str] = None
     MAILGUN_API_KEY: Optional[str] = None
     MAILGUN_DOMAIN: Optional[str] = None
+    B2_API_KEY_ID: Optional[str] = None
+    B2_BUCKET_NAME: Optional[str] = None
+    B2_API_KEY: Optional[str] = None
 
 
 class DevConfig(GlobalConfig):
