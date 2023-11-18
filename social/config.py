@@ -24,6 +24,8 @@ class GlobalConfig(BaseConfig):
     B2_API_KEY_ID: Optional[str] = None
     B2_BUCKET_NAME: Optional[str] = None
     B2_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_IMAGE_SIZE: Optional[str] = None
 
 
 class DevConfig(GlobalConfig):
