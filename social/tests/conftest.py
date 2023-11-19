@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, Mock
@@ -6,9 +7,13 @@ import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient, Request, Response
 
+from social.tests.helpers import create_post  # noqa: E402
+
 os.environ["ENV_STATE"] = "test"
 from social.database import database, user_table  # noqa: E402
 from social.main import app  # noqa: E402
+
+logging.getLogger("openai").setLevel(logging.DEBUG)
 
 
 @pytest.fixture(scope="session")
@@ -24,7 +29,7 @@ def client() -> Generator:
 @pytest.fixture(autouse=True)
 async def db() -> AsyncGenerator:
     await database.connect()
-    yield
+    yield database
     await database.disconnect()
 
 
@@ -62,6 +67,35 @@ async def confirmed_user(registered_user: dict) -> dict:
 async def logged_in_token(async_client: AsyncClient, confirmed_user: dict):
     response = await async_client.post("/token", json=confirmed_user)
     return response.json()["access_token"]
+
+
+@pytest.fixture()
+def mock_generate_image(mocker):
+    return mocker.patch(
+        "social.tasks._generate_image_api",
+        return_value={
+            "created": 1700323866,
+            "data": [
+                {
+                    "revised_prompt": "Create an image of a baby sea otter.",
+                    "url": "https://test.com/image.png",
+                }
+            ],
+        },
+    )
+
+
+@pytest.fixture()
+async def created_post(
+    async_client: AsyncClient,
+    logged_in_token: str,
+    mock_generate_image,
+):
+    return await create_post(
+        "Test Post",
+        async_client,
+        logged_in_token,
+    )
 
 
 @pytest.fixture(autouse=True)
