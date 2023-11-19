@@ -13,4 +13,5 @@ My notes and experiments while completing the [Mastering REST APIs with FastAPI]
  * User Email confirmation
  * File Uploads
  * Background tasks
+ * Image generation using OpenAi based on post body
  * Deployment and APP management
