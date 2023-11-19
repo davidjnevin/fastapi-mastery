@@ -7,11 +7,12 @@ My notes and experiments while completing the [Mastering REST APIs with FastAPI]
  * TDD approach
  * Logging in FastAPI
  * Async databases
- * Log in
+ * Logging in Betterstack
  * User Authentication
  * SqlAlchemy relationships
  * User Email confirmation
  * File Uploads
  * Background tasks
  * Image generation using OpenAi based on post body
- * Deployment and APP management
+ * Sentry Monitoring
+ * Github Actions for linting and testing
