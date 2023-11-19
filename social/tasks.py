@@ -1,8 +1,9 @@
 import logging
-from json import JSONDecodeError
 
 import httpx
+import openai
 from databases import Database
+from openai import AsyncOpenAI
 
 from social.config import config
 from social.database import post_table
@@ -54,35 +55,51 @@ async def send_user_registration_email(to: str, confirmation_url: str):
 
 async def _generate_image_api(prompt: str):
     logging.debug(f"Generating image from prompt: {prompt[:30]}")
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                "https://api.openai.com/v1/images/generations",
-                headers={
-                    "Authorization": f"Bearer {config.OPENAI_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                data={
-                    "model": "dall-e-3",
-                    "prompt": prompt,
-                    "n": 1,
-                    "size": config.OPENAI_IMAGE_SIZE,
-                },
-                timeout=45,
-            )
-            logger.debug(response)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Error generating image: {e}")
-            raise APIResponseException(
-                f"API request with status code {e.response.status_code} failed"
-            ) from e
-        except (JSONDecodeError, TypeError) as e:
-            logger.error(f"Error parsing json: {e}")
-            raise APIResponseException(
-                f"API response could not be parsed: {e}"
-            ) from e
+    openai_client = AsyncOpenAI(
+        api_key=config.OPENAI_API_KEY,
+        max_retries=1,
+        timeout=60,
+    )
+    try:
+        response = await openai_client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            n=1,
+            size=config.OPENAI_IMAGE_SIZE,
+        )
+        logger.debug(response)
+        output = response.model_dump(exclude_unset=True)
+        logger.debug(f"The response form openai is {output}")
+        return output
+
+    except openai.APIConnectionError as e:
+        # Handle connection error, e.g. check network or log
+        print(f"OpenAI API request failed to connect: {e}")
+        pass
+    except openai.BadRequestError as e:
+        # Handle invalid request error, e.g. validate parameters or log
+        print(f"OpenAI API request was invalid: {e}")
+        pass
+    except openai.AuthenticationError as e:
+        # Handle authentication error, e.g. check credentials or log
+        print(f"OpenAI API request was not authorized: {e}")
+        pass
+    except openai.PermissionDeniedError as e:
+        # Handle permission error, e.g. check scope or log
+        print(f"OpenAI API request was not permitted: {e}")
+        pass
+    except openai.RateLimitError as e:
+        # Handle rate limit error, e.g. wait or log
+        print(f"OpenAI API request exceeded rate limit: {e}")
+        pass
+    except openai.APIStatusError as e:
+        # Handle rate limit error, e.g. wait or log
+        print(f"OpenAI API request exceeded rate limit: {e}")
+        pass
+    except openai.APIError as e:
+        # Handle API error, e.g. retry or log
+        print(f"OpenAI API returned an API Error: {e}")
+        pass
 
 
 async def generate_image_and_add_to_post(
