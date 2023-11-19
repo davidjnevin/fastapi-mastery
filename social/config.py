@@ -26,6 +26,7 @@ class GlobalConfig(BaseConfig):
     B2_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_IMAGE_SIZE: Optional[str] = None
+    SENTRY_DSN: Optional[str] = None
 
 
 class DevConfig(GlobalConfig):
