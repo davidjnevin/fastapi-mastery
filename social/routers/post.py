@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Annotated
 
 import sqlalchemy
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 
 import social.security as security
 from social.database import comment_table, database, like_table, post_table
@@ -18,6 +18,7 @@ from social.models.post import (
     UserPostWithLikes,
 )
 from social.models.user import User
+from social.tasks import generate_image_and_add_to_post
 
 router = APIRouter()
 
@@ -44,18 +45,34 @@ async def find_post(post_id: int):
 async def create_post(
     post: UserPostIn,
     current_user: Annotated[User, Depends(security.get_current_user)],
+    background_tasks: BackgroundTasks,
+    request: Request,
 ):
     logger.info("Creating post")
     data = {**post.model_dump(), "user_id": current_user.id}
     query = post_table.insert().values(data)
     logger.debug(query)
     last_record_id = await database.execute(query)
+
+    prompt = post.body
+    background_tasks.add_task(
+        generate_image_and_add_to_post,
+        current_user.email,
+        last_record_id,
+        request.url_for(
+            "get_post_with_comments",
+            post_id=last_record_id,
+        ),
+        database,
+        prompt,
+    )
+
     return {**data, "id": last_record_id}
 
 
 class PostSorting(str, Enum):
-    new = "new"
     old = "old"
+    new = "new"
     most_likes = "most_likes"
 
 
