@@ -2,7 +2,9 @@ from httpx import AsyncClient
 
 
 async def create_post(
-    body: str, async_client: AsyncClient, logged_in_token: str
+    body: str,
+    async_client: AsyncClient,
+    logged_in_token: str,
 ) -> dict:
     response = await async_client.post(
         "/post",
