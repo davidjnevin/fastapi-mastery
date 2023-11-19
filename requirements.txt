@@ -14,3 +14,4 @@ passlib[bcrypt]
 httpx
 aiofiles
 b2sdk
+openai
