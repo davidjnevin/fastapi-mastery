@@ -19,7 +19,10 @@ async def created_comment(
 
 @pytest.mark.anyio
 async def test_create_post(
-    async_client: AsyncClient, confirmed_user: dict, logged_in_token: str
+    async_client: AsyncClient,
+    confirmed_user: dict,
+    logged_in_token: str,
+    mock_generate_image,
 ):
     body = "Test Post"
     response = await async_client.post(
@@ -40,9 +43,34 @@ async def test_create_post(
 
 
 @pytest.mark.anyio
+async def test_create_post_with_prompt(
+    async_client: AsyncClient,
+    logged_in_token: str,
+    mock_generate_image,
+):
+    body = "A small dog lived in the woods"
+
+    response = await async_client.post(
+        "/post",
+        json={"body": body},
+        headers={"Authorization": f"Bearer {logged_in_token}"},
+    )
+
+    assert response.status_code == 201
+    assert {
+        "id": 1,
+        "body": body,
+        "image_url": None,
+    }.items() <= response.json().items()
+
+    mock_generate_image.assert_called()
+
+
+@pytest.mark.anyio
 async def test_create_post_json_without_body_keyword_should_fail(
     async_client: AsyncClient,
     logged_in_token: str,
+    mock_generate_image,
 ):
     response = await async_client.post(
         "/post",
@@ -57,6 +85,7 @@ async def test_create_post_json_without_body_keyword_should_fail(
 async def test_create_post_expired_token(
     async_client: AsyncClient,
     confirmed_user: dict,
+    mock_generate_image,
 ):
     expired_token = create_access_token(
         confirmed_user["email"], expires_minutes=-1
@@ -73,10 +102,14 @@ async def test_create_post_expired_token(
 
 
 @pytest.mark.anyio
-async def test_get_all_posts(async_client: AsyncClient, created_post: dict):
+async def test_get_all_posts(
+    async_client: AsyncClient,
+    created_post: dict,
+):
     response = await async_client.get("/post")
 
     assert response.status_code == 200
+    created_post["image_url"] = "https://test.com/image.png"
     assert response.json() == [{**created_post, "likes": 0}]
 
 
@@ -94,6 +127,7 @@ async def test_get_all_posts_sorting(
     logged_in_token: str,
     sorting: str,
     expected_order: list[int],
+    mock_generate_image,
 ):
     await create_post("Test Post 1", async_client, logged_in_token)
     post_2_response = await create_post(
@@ -112,7 +146,7 @@ async def test_get_all_posts_sorting(
 
 
 @pytest.mark.anyio
-async def test_gat_all_posts_incorrect_sorting(async_client: AsyncClient):
+async def test_get_all_posts_incorrect_sorting(async_client: AsyncClient):
     response = await async_client.get("/post", params={"sorting": "incorrect"})
     assert response.status_code == 422
 
@@ -170,6 +204,7 @@ async def test_get_post_and_its_comments(
     async_client: AsyncClient, created_post: dict, created_comment: dict
 ):
     response = await async_client.get(f"/post/{created_post['id']}")
+    created_post["image_url"] = "https://test.com/image.png"
     assert response.status_code == 200
     assert (
         response.json().items()
